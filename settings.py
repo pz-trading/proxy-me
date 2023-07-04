@@ -1,4 +1,5 @@
 DOMAIN_NAME = "proxyme.net"
+PORT = 8000
 
 
 class config_jwt():

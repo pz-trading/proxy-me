@@ -15,6 +15,10 @@ class UsersModel(Base):
     # 2 = Admin
     # 3 = Management
 
+    reset_password_code = Column(String, default="")
+    request_reset = Column(Boolean, default=False)
+    # request_reset if True then request reset password page
+
 
 class GroupsModel(Base):
     __tablename__ = 'groups'

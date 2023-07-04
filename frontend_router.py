@@ -1,28 +1,25 @@
 import datetime
-import json
-import os
-import time
 from datetime import timedelta
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.requests import Request
-from fastapi.templating import Jinja2Templates
 from fastapi.encoders import jsonable_encoder
 
 from jose import JWTError, jwt, ExpiredSignatureError
 from utils import authenticate_user, create_access_token
 from settings import config_jwt
 from database import SessionLocal, get_db
-from utils import templates
+from utils import templates, get_password_hash
 
 from decorators import user_token_required
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 import models
 import validators
 
 router = APIRouter()
 
 
+@router.get("/reset-password/", response_class=HTMLResponse)
 @router.get("/login/", response_class=HTMLResponse)
 @router.get("/members/", response_class=HTMLResponse)
 @router.get("/contacts/", response_class=HTMLResponse)
@@ -99,14 +96,48 @@ async def logout(request: Request, response: Response):
 @router.post("/be-api/login/")
 async def login_for_access_token(
         request: Request,
-        # response: Response,
         db: SessionLocal = Depends(get_db)):
 
     data = await request.json()
+    errors = []
+    if 'email' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Email address',
+            'field': 'email'
+        })
+    else:
+        if not validators.email(data['email']):
+            errors.append({
+                'error_code': status.HTTP_400_BAD_REQUEST,
+                'error_message': 'Invalid Email address',
+                'field': 'email'
+            })
+
+    if 'password' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Password',
+            'field': 'password'
+        })
+    else:
+        if len(data['password']) < 4:
+            errors.append({
+                'error_code': status.HTTP_400_BAD_REQUEST,
+                'error_message': 'Password Length must be 4 characters long minimum.',
+                'field': 'password'
+            })
+    if len(errors):
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+
     user = authenticate_user(db, data['email'], data['password'])
     if not user:
-        return JSONResponse(status_code=401, content={
-            "message": "Invalid email or password", "error": "INVALID_CREDENTIALS"})
+        errors.append({
+            'error_code': status.HTTP_400_BAD_REQUEST,
+            'error_message': 'Invalid email or password. If you are unsure with your credentials, please contact your administrator.',
+            'field': 'all'
+        })
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
 
     access_token_expires = timedelta(
         minutes=config_jwt.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -118,17 +149,6 @@ async def login_for_access_token(
 
     expiration_datetime = datetime.datetime.now() + access_token_expires
     expires = expiration_datetime.strftime("%a, %d %b %Y %H:%M:%S GMT+8")
-
-    # response = Response(status_code=200, content=json.dumps(
-    #     {"message": "Login successful", "email": user.email}))
-    # response.set_cookie(
-    #     "access_token", access_token,
-    #     httponly=True,
-    #     expires=expires,
-    #     samesite='strict',
-    #     path="/",
-    #     domain=config_jwt.ALLOWED_DOMAINS)
-    # return response
 
     return JSONResponse(
         status_code=200,
@@ -652,3 +672,112 @@ async def delete_contacts(request: Request):
         db.close()
         raise JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={
                            "error_message": "Member not found"})
+
+
+########################### RESET PASSWORD ###########################
+@router.post("/be-api/reset-password/")
+async def reset_password(request: Request):
+
+    data = await request.json()
+
+    errors = []
+    if 'email' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Email address',
+            'field': 'email'
+        })
+    else:
+        if not validators.email(data['email']):
+            errors.append({
+                'error_code': status.HTTP_400_BAD_REQUEST,
+                'error_message': 'Invalid Email address',
+                'field': 'email'
+            })
+
+    if 'password' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Password',
+            'field': 'password'
+        })
+    else:
+        if len(data['password']) < 4:
+            errors.append({
+                'error_code': status.HTTP_400_BAD_REQUEST,
+                'error_message': 'Password Length must be 4 characters long minimum.',
+                'field': 'password'
+            })
+
+    if 'password2' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Confirmation Password',
+            'field': 'password2'
+        })
+    else:
+        if data['password'] != data['password2']:
+            errors.append({
+                'error_code': status.HTTP_412_PRECONDITION_FAILED,
+                'error_message': 'Password confirmation mismatch',
+                'field': 'password2'
+            })
+
+    if 'resetPasswordCode' not in data:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Security Code',
+            'field': 'reset_password_code'
+        })
+    else:
+        if len(data['resetPasswordCode']) != 5:
+            errors.append({
+                'error_code': status.HTTP_412_PRECONDITION_FAILED,
+                'error_message': 'Security code MUST be 5 characters long.',
+                'field': 'reset_password_code'
+            })
+
+    if len(errors):
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+
+    db: Session = get_db()
+
+    user = db.query(models.UsersModel).filter(
+        models.UsersModel.email == data['email']
+    ).first()
+
+    if not user:
+        errors.append({
+            'error_code': status.HTTP_404_NOT_FOUND,
+            'error_message': 'Missing Email address',
+            'field': 'email'
+        })
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'errors': errors})
+
+    if not user.request_reset:
+        errors.append({
+            'error_code': status.HTTP_401_UNAUTHORIZED,
+            'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
+            'field': 'all'
+        })
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
+
+    if user.reset_password_code != data['resetPasswordCode']:
+        errors.append({
+            'error_code': status.HTTP_401_UNAUTHORIZED,
+            'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
+            'field': 'all'
+        })
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
+
+    user.request_reset = False
+    user.reset_password_code = ""
+    user.hashed_password = get_password_hash(data['password'])
+
+    # Commit the changes to the database
+    db.commit()
+
+    # Refresh the instance to reflect any changes made by the database
+    db.refresh(user)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Successfully reset password"})

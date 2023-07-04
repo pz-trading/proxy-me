@@ -12,6 +12,8 @@ import Groups from './pages/groups';
 import Members from './pages/members';
 import Contacts from './pages/contacts';
 import Proxy from './pages/proxy';
+import Admin from './pages/admin';
+import ResetPassword from './pages/reset_password';
 
 const NotFound = () => {
     <h1>Page Not Found</h1>
@@ -27,7 +29,10 @@ function App(){
                         <Route path="/members/" element={<Members />} />
                         <Route path="/contacts/" element={<Contacts />} />
 
-                        <Route path="/login" element={<Login />} />
+                        <Route path="/login/" element={<Login />} />
+                        <Route path="/admin/" element={<Admin />} />
+                        <Route path="/reset-password/" element={<ResetPassword />} />
+
                         <Route component={NotFound} />
                     </Route>
                 </Routes>

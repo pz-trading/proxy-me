@@ -126,7 +126,7 @@ body {
     box-sizing: border-box;
     margin-bottom: 20px;
 }
-.__regis form button[type="submit"] {
+.__regis form button[type="submit"], .__regis form button[type="button"] {
     background-color: #4caf50;
     color: #fff;
     padding: 10px 20px;
@@ -134,10 +134,16 @@ body {
     border-radius: 3px;
     cursor: pointer;
 }
-.__regis form button[type="submit"]:hover {
+.__regis form button[type="submit"]:hover, .__regis form button[type="button"]:hover {
     background-color: #45a049;
 }
-
+.__regis form button[type="button"] {
+    background-color: #1976d2;
+}
+.__regis form .form-controls{
+    display: flex;
+    justify-content: space-between;
+}
 .error-message{
     padding-top: 200px;
     width: 100%;
