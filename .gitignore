@@ -1,0 +1,8 @@
+alembic.ini
+frontend/package-lock.json
+frontend/node_modules/
+alembic/
+__pycache__/
+.vscode/
+.env
+*.log
