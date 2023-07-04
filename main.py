@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +27,7 @@ app.include_router(admin_router, prefix="/admin")
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        host=DOMAIN_NAME,
-        port=PORT,
+        host = os.getenv("DOMAIN_NAME", "0.0.0.0"),
+        port = int(os.getenv("PORT", 8000)),
         reload=True
     )
