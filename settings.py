@@ -12,5 +12,5 @@ class config_jwt():
 
 
 class config_database():
-    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:admin123@localhost:5432/proxyme")
-    print(SQLALCHEMY_DATABASE_URL)
+    SQLALCHEMY_DATABASE_URL = os.getenv("DB_URL", "postgresql://postgres:admin123@localhost:5432/proxyme")
+
