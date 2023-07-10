@@ -158,7 +158,7 @@ async def login_for_access_token(
             "access_level": user.access_level
         },
         headers={
-            "Set-Cookie": f"access_token={access_token}; Expires={expires}; Domain={config_jwt.ALLOWED_DOMAINS}; SameSite=strict; Path=/; HttpOnly"},
+            "Set-Cookie": f"access_token={access_token}; Expires={expires}; SameSite=strict; Path=/; HttpOnly"},
     )
 
 
