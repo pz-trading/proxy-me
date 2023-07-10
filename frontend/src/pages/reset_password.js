@@ -57,7 +57,7 @@ export default function ResetPassword(){
                     <input type='email' onChange={(event)=>setEmail(event.target.value)}/>
                 </div>
                 <div>
-                    <label>Password :</label>
+                    <label>New Password :</label>
                     <span id="span-password">{errorMessage.password}</span>
                     <input type='password' onChange={(event)=>setPassword(event.target.value)}/>
                 </div>
