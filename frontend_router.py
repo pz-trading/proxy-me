@@ -80,7 +80,7 @@ async def logout(request: Request, response: Response):
                     "email": email
                 },
                 headers={
-                    "Set-Cookie": f"access_token={auth_token}; Expires={expires}; Domain={config_jwt.ALLOWED_DOMAINS}; SameSite=strict; Path=/; HttpOnly"
+                    "Set-Cookie": f"access_token={auth_token}; Expires={expires}; SameSite=strict; Path=/; HttpOnly"
                 }
             )
 
