@@ -32,6 +32,12 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics 
-    - name: Test main app
-      run: |
-        uvicorn main:app
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: stag-proxyme-ipforwarder
+          heroku_email: paulon.zervoulakus@gmail.com
+          strategy: api
+          buildpack: nodejs
+
