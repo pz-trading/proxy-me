@@ -22,7 +22,6 @@ export default function Login(){
 
         axios.post("/be-api/login/",{email, password})
         .then( (res) => {
-            console.log(res.data);
             setAccountProfile({
                 "email": res.data?.email,
                 "access_level": res.data?.access_level,

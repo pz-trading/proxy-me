@@ -42,7 +42,7 @@ function Contacts(){
             .then( (res) => {
                 setData(res.data.rows);
             }).catch( (err) => {
-                console.log(err);
+                console.log(err.response);
             });
 
             axios.get("/be-api/get-member/")

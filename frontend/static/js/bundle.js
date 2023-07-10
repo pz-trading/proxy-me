@@ -30323,7 +30323,7 @@ function ButtonAppBar() {
   var location = (0,react_router_dom__WEBPACK_IMPORTED_MODULE_2__.useLocation)();
   var navigate = (0,react_router_dom__WEBPACK_IMPORTED_MODULE_2__.useNavigate)();
   var title = location.pathname.replace(/\//g, '');
-  title = title === "" ? "Proxy" : title;
+  title = title === "" ? "ProxyMe" : title;
   var camel_title = title.charAt(0).toUpperCase() + title.slice(1);
   var logout = function logout() {
     axios__WEBPACK_IMPORTED_MODULE_3__["default"].get("/be-api/logout/").then(function (res) {
@@ -30334,7 +30334,7 @@ function ButtonAppBar() {
       });
       navigate("/login");
     })["catch"](function (err) {
-      console.log('logout error: ', err);
+      console.log('logout error: ', err.response);
     });
   };
   var toggleDrawer = function toggleDrawer(open) {
@@ -30486,7 +30486,6 @@ function UserContextProvider(_ref) {
         });
       }
     })["catch"](function (err) {
-      console.log(err.response.status, err.response.data.messaage);
       setAccountProfile(function (prevProfile) {
         return _objectSpread(_objectSpread({}, prevProfile), {}, {
           email: prevProfile.email || defaultEmail,
@@ -30596,7 +30595,7 @@ function Admin() {
       }).then(function (res) {
         setData(res.data.rows);
       })["catch"](function (err) {
-        console.log(err);
+        console.log(err.response);
       });
     }
   }, [accountProfile, queryFlag]);
@@ -31058,7 +31057,7 @@ function Contacts() {
       }).then(function (res) {
         setData(res.data.rows);
       })["catch"](function (err) {
-        console.log(err);
+        console.log(err.response);
       });
       axios__WEBPACK_IMPORTED_MODULE_6__["default"].get("/be-api/get-member/").then(function (res) {
         setMembersList(res.data.rows);
@@ -31461,7 +31460,7 @@ function Groups() {
       }).then(function (res) {
         setData(res.data.rows);
       })["catch"](function (err) {
-        console.log(err);
+        console.log(err.response);
       });
     }
   }, [accountProfile, queryFlag]);
@@ -31490,7 +31489,7 @@ function Groups() {
         });
         navigate("/login");
       }
-      console.log("Error: ", err);
+      console.log("Error: ", err.response);
       handleErrorOnSave((_err$response = err.response) === null || _err$response === void 0 ? void 0 : (_err$response$data = _err$response.data) === null || _err$response$data === void 0 ? void 0 : _err$response$data.errors);
     });
   };
@@ -31837,7 +31836,6 @@ function Login() {
       password: password
     }).then(function (res) {
       var _res$data, _res$data2;
-      console.log(res.data);
       setAccountProfile({
         "email": (_res$data = res.data) === null || _res$data === void 0 ? void 0 : _res$data.email,
         "access_level": (_res$data2 = res.data) === null || _res$data2 === void 0 ? void 0 : _res$data2.access_level,

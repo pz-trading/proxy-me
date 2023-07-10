@@ -39,7 +39,6 @@ export function UserContextProvider({ children }){
             }
 
         }).catch((err)=>{
-            console.log(err.response.status, err.response.data.messaage);
             setAccountProfile((prevProfile) => ({
                 ...prevProfile,
                 email: prevProfile.email || defaultEmail,

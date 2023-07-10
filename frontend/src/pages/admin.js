@@ -41,7 +41,7 @@ function Admin(){
             .then( (res) => {
                 setData(res.data.rows);
             }).catch( (err) => {
-                console.log(err);
+                console.log(err.response);
             });
         }
     },[accountProfile, queryFlag]);
