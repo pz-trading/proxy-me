@@ -24,10 +24,12 @@ app.include_router(api_router, prefix="/api")
 app.include_router(admin_router, prefix="/admin")
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host = os.getenv("DOMAIN_NAME", "0.0.0.0"),
-        port = int(os.getenv("PORT", 8000)),
-        reload=True
-    )
+# if __name__ == "__main__":
+#     uvicorn.run(
+#         "main:app",
+#         #host=os.getenv("DOMAIN_NAME", "0.0.0.0"),
+#         #port=int(os.getenv("PORT", 5000)),
+#         host=DOMAIN_NAME,
+#         port=PORT,
+#         reload=True
+#     )

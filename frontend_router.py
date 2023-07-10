@@ -266,6 +266,7 @@ async def save_proxy_configurations(
     if len(errors):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
 
+    # Update all group status to false
     if data['for_update']:
         config = db.query(models.ConfigModel).filter(
             models.ConfigModel.id == data['id']).first()
@@ -291,6 +292,10 @@ async def save_proxy_configurations(
             })
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
     else:
+        if data['status'] == True:
+            db.query(models.ConfigModel
+                     ).filter(models.ConfigModel.department_id == data['department_id']
+                              ).update({'status': False})
 
         new_config = models.ConfigModel(
             url=data['url'],
