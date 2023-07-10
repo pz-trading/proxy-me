@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -22,7 +22,7 @@ export default function ButtonAppBar() {
     const navigate = useNavigate();
 
     let title = location.pathname.replace(/\//g, '');
-    title = title === "" ? "Proxy" : title;
+    title = title === "" ? "ProxyMe" : title;
     let camel_title = title.charAt(0).toUpperCase() + title.slice(1);
 
     const logout = () => {
@@ -37,7 +37,7 @@ export default function ButtonAppBar() {
             navigate("/login")
 
         }).catch(err => {
-            console.log('logout error: ', err);
+            console.log('logout error: ', err.response);
         });
     }
     const toggleDrawer = (open) => (event) => {

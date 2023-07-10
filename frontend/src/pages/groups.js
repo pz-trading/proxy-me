@@ -41,7 +41,7 @@ function Groups(){
             .then( (res) => {
                 setData(res.data.rows);
             }).catch( (err) => {
-                console.log(err);
+                console.log(err.response);
             });
         }
     },[accountProfile, queryFlag]);
@@ -71,7 +71,7 @@ function Groups(){
                 });
                 navigate("/login");
             }
-            console.log("Error: ", err)
+            console.log("Error: ", err.response)
             handleErrorOnSave(err.response?.data?.errors);
         });
     };
