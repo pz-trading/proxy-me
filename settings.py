@@ -1,3 +1,5 @@
+import os
+
 DOMAIN_NAME = "proxyme.net"
 PORT = 8000
 
@@ -10,4 +12,4 @@ class config_jwt():
 
 
 class config_database():
-    SQLALCHEMY_DATABASE_URL = "postgresql://postgres:admin123@localhost:5432/proxyme"
+    SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:admin123@localhost:5432/proxyme")
