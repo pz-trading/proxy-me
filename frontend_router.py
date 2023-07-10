@@ -28,7 +28,7 @@ router = APIRouter()
 async def index(request: Request):
     context = {
         "request": request,
-        "title": "Proxy Me"
+        "title": "ProxyMe IP Forwarder"
     }
     return templates.TemplateResponse("index.html", context)
 
