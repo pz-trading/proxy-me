@@ -80,7 +80,7 @@ async def logout(request: Request, response: Response):
                     "email": email
                 },
                 headers={
-                    "Set-Cookie": f"access_token={auth_token}; Expires={expires}; Domain={config_jwt.ALLOWED_DOMAINS}; SameSite=strict; Path=/; HttpOnly"
+                    "Set-Cookie": f"access_token={auth_token}; Expires={expires}; SameSite=strict; Path=/; HttpOnly"
                 }
             )
 
@@ -177,19 +177,18 @@ async def get_proxy_configurations(
     db: Session = get_db()
     try:
         configs = db.query(models.ConfigModel).all()
+
+        config_data = []
+
+        for config in configs:
+            config_dict = config.__dict__
+            dp_name = config.department.department if config.department else None
+            config_dict['dp_name'] = dp_name
+            config_data.append(config_dict)
+
+        config_data = jsonable_encoder(configs)
     finally:
         db.close()
-
-    config_data = []
-
-    for config in configs:
-        config_dict = config.__dict__
-        dp_name = config.department.department if config.department else None
-        config_dict['dp_name'] = dp_name
-        config_data.append(config_dict)
-
-    config_data = jsonable_encoder(configs)
-
     return JSONResponse(status_code=200, content={"rows": config_data})
 
 
@@ -453,17 +452,18 @@ async def get_proxy_configurations(
     db: Session = get_db()
     try:
         members = db.query(models.MembersModel).all()
+
+        member_data = []
+
+        for member in members:
+            member_dict = member.__dict__
+            dp_name = member.groups.department if member.groups else None
+            member_dict['dp_name'] = dp_name
+            member_data.append(member_dict)
+
+        member_data = jsonable_encoder(members)
     finally:
         db.close()
-    member_data = []
-
-    for member in members:
-        member_dict = member.__dict__
-        dp_name = member.groups.department if member.groups else None
-        member_dict['dp_name'] = dp_name
-        member_data.append(member_dict)
-
-    member_data = jsonable_encoder(members)
 
     return JSONResponse(status_code=200, content={"rows": member_data})
 
@@ -594,20 +594,21 @@ async def get_proxy_configurations(
     db: Session = get_db()
     try:
         contacts = db.query(models.ContactsModel).all()
+
+
+        contact_data = []
+
+        for contact in contacts:
+            contact_dict = contact.__dict__
+            fullname = contact.member.fullname if contact.member else None
+            email = contact.member.email if contact.member else None
+            contact_dict['fullname'] = fullname
+            contact_dict['email'] = email
+            contact_data.append(contact_dict)
+
+        contact_data = jsonable_encoder(contacts)
     finally:
         db.close()
-
-    contact_data = []
-
-    for contact in contacts:
-        contact_dict = contact.__dict__
-        fullname = contact.member.fullname if contact.member else None
-        email = contact.member.email if contact.member else None
-        contact_dict['fullname'] = fullname
-        contact_dict['email'] = email
-        contact_data.append(contact_dict)
-
-    contact_data = jsonable_encoder(contacts)
 
     return JSONResponse(status_code=200, content={"rows": contact_data})
 
