@@ -130,7 +130,11 @@ async def login_for_access_token(
     if len(errors):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
 
-    user = authenticate_user(db, data['email'], data['password'])
+    try:
+        user = authenticate_user(db, data['email'], data['password'])
+    finally:
+        db.close()
+
     if not user:
         errors.append({
             'error_code': status.HTTP_400_BAD_REQUEST,
@@ -171,7 +175,11 @@ async def get_proxy_configurations(
         request: Request):
 
     db: Session = get_db()
-    configs = db.query(models.ConfigModel).all()
+    try:
+        configs = db.query(models.ConfigModel).all()
+    finally:
+        db.close()
+
     config_data = []
 
     for config in configs:
@@ -253,64 +261,67 @@ async def save_proxy_configurations(
         })
 
     db: Session = get_db()
-    query = db.query(models.GroupsModel).filter(
-        models.GroupsModel.id == data['department_id']).first()
+    try:
+        query = db.query(models.GroupsModel).filter(
+            models.GroupsModel.id == data['department_id']).first()
 
-    if not query:
-        errors.append({
-            'error_code': 400,
-            'error_message': 'Department is required. Please select the correct department.',
-            'field': 'department_id'
-        })
-
-    if len(errors):
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-
-    # Update all group status to false
-    if data['for_update']:
-        config = db.query(models.ConfigModel).filter(
-            models.ConfigModel.id == data['id']).first()
-
-        if config:
-            # Update the attributes with the new data
-            config.url = data['url']
-            config.ip = data['ip']
-            config.port = data['port']
-            config.mode = data['mode']
-            config.department_id = data['department_id']
-            config.status = data['status']
-            # Commit the changes to the database
-            db.commit()
-
-            # Refresh the instance to reflect any changes made by the database
-            db.refresh(config)
-        else:
+        if not query:
             errors.append({
                 'error_code': 400,
-                'error_message': 'Unable to update configuration.',
-                'field': 'all'
+                'error_message': 'Department is required. Please select the correct department.',
+                'field': 'department_id'
             })
+
+        if len(errors):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-    else:
-        if data['status'] == True:
-            db.query(models.ConfigModel
-                     ).filter(models.ConfigModel.department_id == data['department_id']
-                              ).update({'status': False})
 
-        new_config = models.ConfigModel(
-            url=data['url'],
-            ip=data['ip'],
-            port=data['port'],
-            department_id=data['department_id'],
-            mode=data['mode'],
-            status=False  # for add new configuration make sure to set the Status to false first
+        # Update all group status to false
+        if data['for_update']:
+            config = db.query(models.ConfigModel).filter(
+                models.ConfigModel.id == data['id']).first()
 
-        )
+            if config:
+                # Update the attributes with the new data
+                config.url = data['url']
+                config.ip = data['ip']
+                config.port = data['port']
+                config.mode = data['mode']
+                config.department_id = data['department_id']
+                config.status = data['status']
+                # Commit the changes to the database
+                db.commit()
 
-        db.add(new_config)
-        db.commit()
-        db.refresh(new_config)
-        data = jsonable_encoder(new_config)
+                # Refresh the instance to reflect any changes made by the database
+                db.refresh(config)
+            else:
+                errors.append({
+                    'error_code': 400,
+                    'error_message': 'Unable to update configuration.',
+                    'field': 'all'
+                })
+                return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+        else:
+            if data['status'] == True:
+                db.query(models.ConfigModel
+                        ).filter(models.ConfigModel.department_id == data['department_id']
+                                ).update({'status': False})
+
+            new_config = models.ConfigModel(
+                url=data['url'],
+                ip=data['ip'],
+                port=data['port'],
+                department_id=data['department_id'],
+                mode=data['mode'],
+                status=False  # for add new configuration make sure to set the Status to false first
+
+            )
+
+            db.add(new_config)
+            db.commit()
+            db.refresh(new_config)
+            data = jsonable_encoder(new_config)
+    finally:
+        db.close()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": data})
 
@@ -344,7 +355,10 @@ async def delete_proxy_configuration(request: Request):
 @user_token_required
 async def get_groups(request: Request):
     db: Session = get_db()
-    groups = db.query(models.GroupsModel).all()
+    try:
+        groups = db.query(models.GroupsModel).all()
+    finally:
+        db.close()
     groups_data = jsonable_encoder(groups)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"rows": groups_data})
 
@@ -369,38 +383,40 @@ async def save_group_settings(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
 
     db: Session = get_db()
+    try:
+        if data['for_update']:
+            group = db.query(models.GroupsModel).filter(
+                models.GroupsModel.id == data['id']).first()
 
-    if data['for_update']:
-        group = db.query(models.GroupsModel).filter(
-            models.GroupsModel.id == data['id']).first()
+            if group:
+                # Update the attributes with the new data
+                group.department = data['department']
+                group.status = data['status']
+                # Commit the changes to the database
+                db.commit()
 
-        if group:
-            # Update the attributes with the new data
-            group.department = data['department']
-            group.status = data['status']
-            # Commit the changes to the database
-            db.commit()
-
-            # Refresh the instance to reflect any changes made by the database
-            db.refresh(group)
+                # Refresh the instance to reflect any changes made by the database
+                db.refresh(group)
+            else:
+                errors.append({
+                    'error_code': 400,
+                    'error_message': 'Unable to update group settings.',
+                    'field': 'all'
+                })
+                return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
         else:
-            errors.append({
-                'error_code': 400,
-                'error_message': 'Unable to update group settings.',
-                'field': 'all'
-            })
-            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-    else:
 
-        new_group = models.GroupsModel(
-            department=data['department'],
-            status=False  # for add new configuration make sure to set the Status to false first
-        )
+            new_group = models.GroupsModel(
+                department=data['department'],
+                status=False  # for add new configuration make sure to set the Status to false first
+            )
 
-        db.add(new_group)
-        db.commit()
-        db.refresh(new_group)
-        data = jsonable_encoder(new_group)
+            db.add(new_group)
+            db.commit()
+            db.refresh(new_group)
+            data = jsonable_encoder(new_group)
+    finally:
+        db.close()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": data})
 
@@ -435,7 +451,10 @@ async def get_proxy_configurations(
         request: Request):
 
     db: Session = get_db()
-    members = db.query(models.MembersModel).all()
+    try:
+        members = db.query(models.MembersModel).all()
+    finally:
+        db.close()
     member_data = []
 
     for member in members:
@@ -486,56 +505,59 @@ async def save_proxy_configurations(
             })
 
     db: Session = get_db()
-    query = db.query(models.GroupsModel).filter(
-        models.GroupsModel.id == data['group_id']).first()
+    try:
+        query = db.query(models.GroupsModel).filter(
+            models.GroupsModel.id == data['group_id']).first()
 
-    if not query:
-        errors.append({
-            'error_code': 400,
-            'error_message': 'Department is required. Please select the correct department.',
-            'field': 'group_id'
-        })
-        # return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-
-    if len(errors):
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-
-    if data['for_update']:
-        member = db.query(models.MembersModel).filter(
-            models.MembersModel.id == data['id']).first()
-
-        if member:
-            # Update the attributes with the new data
-            member.fullname = data['fullname']
-            member.email = data['email']
-            member.group_id = data['group_id']
-            member.status = data['status']
-            # Commit the changes to the database
-            db.commit()
-
-            # Refresh the instance to reflect any changes made by the database
-            db.refresh(member)
-        else:
+        if not query:
             errors.append({
                 'error_code': 400,
-                'error_message': 'Unable to update Member\'s information.',
-                'field': 'all'
+                'error_message': 'Department is required. Please select the correct department.',
+                'field': 'group_id'
             })
+            # return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+
+        if len(errors):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-    else:
 
-        new_member = models.MembersModel(
-            fullname=data['fullname'],
-            email=data['email'],
-            group_id=query.id,
-            status=False  # for add new configuration make sure to set the Status to false first
+        if data['for_update']:
+            member = db.query(models.MembersModel).filter(
+                models.MembersModel.id == data['id']).first()
 
-        )
+            if member:
+                # Update the attributes with the new data
+                member.fullname = data['fullname']
+                member.email = data['email']
+                member.group_id = data['group_id']
+                member.status = data['status']
+                # Commit the changes to the database
+                db.commit()
 
-        db.add(new_member)
-        db.commit()
-        db.refresh(new_member)
-        data = jsonable_encoder(new_member)
+                # Refresh the instance to reflect any changes made by the database
+                db.refresh(member)
+            else:
+                errors.append({
+                    'error_code': 400,
+                    'error_message': 'Unable to update Member\'s information.',
+                    'field': 'all'
+                })
+                return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+        else:
+
+            new_member = models.MembersModel(
+                fullname=data['fullname'],
+                email=data['email'],
+                group_id=query.id,
+                status=False  # for add new configuration make sure to set the Status to false first
+
+            )
+
+            db.add(new_member)
+            db.commit()
+            db.refresh(new_member)
+            data = jsonable_encoder(new_member)
+    finally:
+        db.close()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": data})
 
@@ -570,7 +592,11 @@ async def get_proxy_configurations(
         request: Request):
 
     db: Session = get_db()
-    contacts = db.query(models.ContactsModel).all()
+    try:
+        contacts = db.query(models.ContactsModel).all()
+    finally:
+        db.close()
+
     contact_data = []
 
     for contact in contacts:
@@ -609,50 +635,53 @@ async def save_contacts(
             })
 
     db: Session = get_db()
-    query = db.query(models.MembersModel).filter(
-        models.MembersModel.id == data['member_id']).first()
+    try:
+        query = db.query(models.MembersModel).filter(
+            models.MembersModel.id == data['member_id']).first()
 
-    if not query:
-        errors.append({
-            'error_code': 400,
-            'error_message': 'Member is required. Please select the member to who is this number is assign to.',
-            'field': 'member_id'
-        })
-
-    if len(errors):
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-
-    if data['for_update']:
-        contact = db.query(models.ContactsModel).filter(
-            models.ContactsModel.id == data['id']).first()
-
-        if contact:
-            # Update the attributes with the new data
-            contact.sim_number = data['sim_number']
-            contact.member_id = data['member_id']
-            # Commit the changes to the database
-            db.commit()
-
-            # Refresh the instance to reflect any changes made by the database
-            db.refresh(contact)
-        else:
+        if not query:
             errors.append({
                 'error_code': 400,
-                'error_message': 'Unable to update Member\'s information.',
-                'field': 'all'
+                'error_message': 'Member is required. Please select the member to who is this number is assign to.',
+                'field': 'member_id'
             })
+
+        if len(errors):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
-    else:
 
-        new_contact = models.ContactsModel(
-            sim_number=data['sim_number'],
-            member_id=data['member_id']
-        )
+        if data['for_update']:
+            contact = db.query(models.ContactsModel).filter(
+                models.ContactsModel.id == data['id']).first()
 
-        db.add(new_contact)
-        db.commit()
-        db.refresh(new_contact)
-        data = jsonable_encoder(new_contact)
+            if contact:
+                # Update the attributes with the new data
+                contact.sim_number = data['sim_number']
+                contact.member_id = data['member_id']
+                # Commit the changes to the database
+                db.commit()
+
+                # Refresh the instance to reflect any changes made by the database
+                db.refresh(contact)
+            else:
+                errors.append({
+                    'error_code': 400,
+                    'error_message': 'Unable to update Member\'s information.',
+                    'field': 'all'
+                })
+                return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
+        else:
+
+            new_contact = models.ContactsModel(
+                sim_number=data['sim_number'],
+                member_id=data['member_id']
+            )
+
+            db.add(new_contact)
+            db.commit()
+            db.refresh(new_contact)
+            data = jsonable_encoder(new_contact)
+    finally:
+        db.close()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"data": data})
 
@@ -746,43 +775,45 @@ async def reset_password(request: Request):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={'errors': errors})
 
     db: Session = get_db()
+    try:
+        user = db.query(models.UsersModel).filter(
+            models.UsersModel.email == data['email']
+        ).first()
 
-    user = db.query(models.UsersModel).filter(
-        models.UsersModel.email == data['email']
-    ).first()
+        if not user:
+            errors.append({
+                'error_code': status.HTTP_404_NOT_FOUND,
+                'error_message': 'Missing Email address',
+                'field': 'email'
+            })
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'errors': errors})
 
-    if not user:
-        errors.append({
-            'error_code': status.HTTP_404_NOT_FOUND,
-            'error_message': 'Missing Email address',
-            'field': 'email'
-        })
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'errors': errors})
+        if not user.request_reset:
+            errors.append({
+                'error_code': status.HTTP_401_UNAUTHORIZED,
+                'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
+                'field': 'all'
+            })
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
 
-    if not user.request_reset:
-        errors.append({
-            'error_code': status.HTTP_401_UNAUTHORIZED,
-            'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
-            'field': 'all'
-        })
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
+        if user.reset_password_code != data['resetPasswordCode']:
+            errors.append({
+                'error_code': status.HTTP_401_UNAUTHORIZED,
+                'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
+                'field': 'all'
+            })
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
 
-    if user.reset_password_code != data['resetPasswordCode']:
-        errors.append({
-            'error_code': status.HTTP_401_UNAUTHORIZED,
-            'error_message': 'Request not Authorized! Please contact the administrator and request for a reset password',
-            'field': 'all'
-        })
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={'errors': errors})
+        user.request_reset = False
+        user.reset_password_code = ""
+        user.hashed_password = get_password_hash(data['password'])
 
-    user.request_reset = False
-    user.reset_password_code = ""
-    user.hashed_password = get_password_hash(data['password'])
+        # Commit the changes to the database
+        db.commit()
 
-    # Commit the changes to the database
-    db.commit()
-
-    # Refresh the instance to reflect any changes made by the database
-    db.refresh(user)
+        # Refresh the instance to reflect any changes made by the database
+        db.refresh(user)
+    finally:
+        db.close()
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Successfully reset password"})
