@@ -8,7 +8,7 @@ class config_jwt():
     SECRET_KEY = "1f26f9fcbd3b4b051f3e55ac342822788635b0debc5e1e399c7c14f15f6e24b8"
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 60
-    ALLOWED_DOMAINS = "proxyme.net"
+    ALLOWED_DOMAINS = os.getenv("ALLOWED_DOMAINS","proxyme.net")
 
 
 class config_database():
