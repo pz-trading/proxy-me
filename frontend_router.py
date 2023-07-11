@@ -70,7 +70,7 @@ async def logout(request: Request, response: Response):
             payload = jwt.decode(auth_token, config_jwt.SECRET_KEY, algorithms=[
                                  config_jwt.ALGORITHM])
             email: str = payload.get("email")
-            expiration_datetime = datetime.datetime.now() - datetime.timedelta(hours=1)
+            expiration_datetime = datetime.datetime.now() - datetime.timedelta(days=1)
             expires = expiration_datetime.strftime(
                 "%a, %d %b %Y %H:%M:%S GMT+8")
             return JSONResponse(
@@ -280,6 +280,13 @@ async def save_proxy_configurations(
                 models.ConfigModel.id == data['id']).first()
 
             if config:
+                if data['status'] == True:
+                    # Deactivate other config
+                    db.query(models.ConfigModel
+                        ).filter(models.ConfigModel.department_id == data['department_id']
+                                ).update({'status': False})
+
+
                 # Update the attributes with the new data
                 config.url = data['url']
                 config.ip = data['ip']
@@ -446,7 +453,7 @@ async def delete_group_settings(request: Request):
 
 @router.get("/be-api/get-member/")
 @user_token_required
-async def get_proxy_configurations(
+async def get_member(
         request: Request):
 
     db: Session = get_db()
@@ -470,7 +477,7 @@ async def get_proxy_configurations(
 
 @router.post("/be-api/save-member/")
 @user_token_required
-async def save_proxy_configurations(
+async def save_member(
         request: Request):
 
     data = await request.json()
@@ -588,7 +595,7 @@ async def delete_member(request: Request):
 
 @router.get("/be-api/get-contacts/")
 @user_token_required
-async def get_proxy_configurations(
+async def get_contacts(
         request: Request):
 
     db: Session = get_db()
