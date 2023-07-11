@@ -1,44 +1,43 @@
-import React, { useContext } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import { UserContextProvider } from './context/user';
 
-// Import components for each page
 import Layout from './pages/layout';
 
-import Login from './pages/login';
-import Groups from './pages/groups';
-import Members from './pages/members';
-import Contacts from './pages/contacts';
-import Proxy from './pages/proxy';
-import Admin from './pages/admin';
-import ResetPassword from './pages/reset_password';
+// Use lazy loading for the components that need to be lazily loaded
+const LazyLogin = lazy(() => import('./pages/login'));
+const LazyGroups = lazy(() => import('./pages/groups'));
+const LazyMembers = lazy(() => import('./pages/members'));
+const LazyContacts = lazy(() => import('./pages/contacts'));
+const LazyProxy = lazy(() => import('./pages/proxy'));
+const LazyAdmin = lazy(() => import('./pages/admin'));
+const LazyResetPassword = lazy(() => import('./pages/reset_password'));
 
-const NotFound = () => {
-    <h1>Page Not Found</h1>
-}
-function App(){
-    return (
-        <UserContextProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<Layout />}>
-                        <Route path="/" element={<Proxy />} />
-                        <Route path="/groups/" element={<Groups />} />
-                        <Route path="/members/" element={<Members />} />
-                        <Route path="/contacts/" element={<Contacts />} />
+const NotFound = () => <h1>Page Not Found</h1>;
 
-                        <Route path="/login/" element={<Login />} />
-                        <Route path="/admin/" element={<Admin />} />
-                        <Route path="/reset-password/" element={<ResetPassword />} />
+function App() {
+  return (
+    <UserContextProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route path="/" element={<Suspense fallback={<div>Loading...</div>}><LazyProxy /></Suspense>} />
+            <Route path="/groups/" element={<Suspense fallback={<div>Loading...</div>}><LazyGroups /></Suspense>} />
+            <Route path="/members/" element={<Suspense fallback={<div>Loading...</div>}><LazyMembers /></Suspense>} />
+            <Route path="/contacts/" element={<Suspense fallback={<div>Loading...</div>}><LazyContacts /></Suspense>} />
 
-                        <Route component={NotFound} />
-                    </Route>
-                </Routes>
-            </BrowserRouter>
-        </UserContextProvider>
-    );
+            <Route path="/login/" element={<Suspense fallback={<div>Loading...</div>}><LazyLogin /></Suspense>} />
+            <Route path="/admin/" element={<Suspense fallback={<div>Loading...</div>}><LazyAdmin /></Suspense>} />
+            <Route path="/reset-password/" element={<Suspense fallback={<div>Loading...</div>}><LazyResetPassword /></Suspense>} />
+
+            <Route component={NotFound} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </UserContextProvider>
+  );
 }
 
 const el = document.getElementById('root');
